@@ -1,0 +1,10 @@
+[package]
+name = "blog-cli"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+chrono = "0.4.44"
+clap = "4.6.0"
+dotenvy = "0.15.7"
+tokio = { workspace = true }
