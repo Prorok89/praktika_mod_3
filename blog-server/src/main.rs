@@ -31,13 +31,19 @@ async fn run() -> Result<(), BlogError> {
         .await
         .map_err(|e| BlogError::ErrorNotKnow(e.to_string()))?;
 
-    println!("{:?}", config);
+    
 
-    let user = User::new("test@test1", "test11", "loginlogin1");
+    // let user = User::new("test@test1", "test11", "loginlogin1");
 
-    _ = user_repository::create_user(&pool, &user)
+    // _ = user_repository::create_user(&pool, &user)
+    //     .await
+    //     .map_err(|e| BlogError::ErrorNotKnow(e.to_string()))?;
+
+    let u = user_repository::find_user_by_email(&pool, "test@test1".to_string())
         .await
         .map_err(|e| BlogError::ErrorNotKnow(e.to_string()))?;
-
+    
+    println!("{:?}", u);
+    
     Ok(())
 }

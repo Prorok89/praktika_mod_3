@@ -4,5 +4,5 @@ members = ["blog-server", "blog-client", "blog-cli", "blog-wasm"]
 
 [workspace.dependencies]
 tokio = { version = "1.50.0", features = ["full"] }
-chrono = "0.4.44"
+chrono = { version = "0.4.44", features = ["serde"] }
 thiserror = "2.0.18"
