@@ -61,3 +61,42 @@ fn verify_password(password: &str, hash: &str) ->Result<bool, argon2::password_h
 
     Ok(argon2.verify_password(password.as_bytes(), &parsed_hash).is_ok())
 }
+
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn test_create_password()
+    {
+        let password = "test";
+
+        let password_hash = hash_password(password);
+        
+        assert_ne!(password, password_hash.unwrap());
+    }
+
+    #[test]
+    fn test_verify_password()
+    {
+        let password = "test";
+
+        let password_hash = hash_password(password);
+
+        assert_eq!(verify_password(password, &password_hash.unwrap()), Ok(true));
+    }
+
+    #[test]
+    fn test_create_user()
+    {
+        let email = "test@test";
+        let password = "test_password";
+        let username = "test_username";
+        let user = User::new(email, password, username).unwrap();
+
+        assert_eq!(email, user.email);
+        assert_eq!(verify_password(password, &hash_password(password).unwrap()), Ok(true));
+    }
+}

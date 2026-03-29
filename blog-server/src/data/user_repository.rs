@@ -4,9 +4,7 @@ use uuid::Uuid;
 use crate::domain::user::User;
 
 pub async fn create_user(pool: &PgPool, user: &User) -> Result<(), sqlx::Error> {
-    let p = false;
-
-    let insert = sqlx::query(
+    _ = sqlx::query(
         r#"insert into users 
             (id, username, email, password_hash, created_at)
             values
@@ -31,10 +29,12 @@ pub async fn update_user(pool: &PgPool, user: &User) -> Result<(), sqlx::Error> 
             set username = $1,
                 email = $2,
                 password_hash = $3
+            where id = &4
     "#)
     .bind(&user.username)
     .bind(&user.email)
     .bind(&user.password_hash)
+    .bind(&user.id)
     .execute(pool)
     .await?
     ;
@@ -66,7 +66,7 @@ pub async fn find_user_by_id(pool: &PgPool, id : Uuid) -> Result<User, sqlx::Err
     .fetch_one(pool)
     .await?
     ;
-    println!("{:?}", user);
+
     Ok(user)
 }
 
