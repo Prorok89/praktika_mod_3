@@ -2,45 +2,56 @@
 POST /api/auth/register
 POST /api/auth/login
 
-POST /api/posts 
-GET /api/posts/{id} 
+POST /api/posts
+GET /api/posts/{id}
 PUT /api/posts/{id}
 DELETE /api/posts/{id}
 GET /api/posts
 */
 
-use actix_web::{HttpResponse, get, post, put, delete, web::{self, ServiceConfig}};
+use actix_web::{
+    HttpResponse, delete, get, post, put,
+    web::{self, ServiceConfig},
+};
+use sqlx::PgPool;
 
-use crate::domain::error::BlogError;
+use crate::{
+    application::auth_service::AuthService,
+    domain::{error::BlogError, user::FormReg},
+};
 
-pub fn configure(cfg: &mut ServiceConfig)
-{
+pub fn configure(cfg: &mut ServiceConfig) {
     let scope_auth = web::scope("/auth")
         .service(auth_register)
         .service(auth_login);
 
-    let scope_api = 
-        web::scope("/api")
-            .service(scope_auth)
-            .service(create_posts)
-            .service(get_post)
-            .service(get_posts)
-            .service(put_post)
-            .service(delete_post)
-            ;
+    let scope_api = web::scope("/api")
+        .service(scope_auth)
+        .service(create_posts)
+        .service(get_post)
+        .service(get_posts)
+        .service(put_post)
+        .service(delete_post);
 
     cfg.service(scope_api);
 }
 
 #[post("/register")]
-async fn auth_register() -> Result<HttpResponse, BlogError>{
+async fn auth_register(
+    user: web::Json<FormReg>,
+    auth_service: web::Data<AuthService>,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, BlogError> {
     // username, email, password
+
+    auth_service.create_user(&user, &pool).await?;
+    
     Ok(HttpResponse::Ok().json(serde_json::json!({
         "test" : "1"
     })))
 }
 #[post("/login")]
-async fn auth_login() -> HttpResponse{
+async fn auth_login() -> HttpResponse {
     // username, password
     HttpResponse::Ok().json(serde_json::json!({
         "test" : "1"
@@ -48,37 +59,36 @@ async fn auth_login() -> HttpResponse{
 }
 
 #[post("/posts")]
-async fn create_posts() -> HttpResponse{
+async fn create_posts() -> HttpResponse {
     HttpResponse::Ok().json(serde_json::json!({
         "test" : "1"
     }))
 }
 
 #[get("/posts/{id}")]
-async fn get_post() -> HttpResponse{
+async fn get_post() -> HttpResponse {
     HttpResponse::Ok().json(serde_json::json!({
         "test" : "1"
     }))
 }
 
 #[get("/posts")]
-async fn get_posts() -> HttpResponse{
+async fn get_posts() -> HttpResponse {
     HttpResponse::Ok().json(serde_json::json!({
         "test" : "1"
     }))
 }
 
 #[put("/posts/{id}")]
-async fn put_post() -> HttpResponse{
+async fn put_post() -> HttpResponse {
     HttpResponse::Ok().json(serde_json::json!({
         "test" : "1"
     }))
 }
 
 #[delete("/posts/{id}")]
-async fn delete_post() -> HttpResponse{
+async fn delete_post() -> HttpResponse {
     HttpResponse::Ok().json(serde_json::json!({
         "test" : "1"
     }))
 }
-

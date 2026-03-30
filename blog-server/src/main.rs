@@ -1,11 +1,14 @@
-use actix_web::{App, HttpServer};
+use std::sync::Arc;
+
+use actix_web::{App, HttpServer, web};
 
 use crate::{
-    data::user_repository,
-    domain::{error::BlogError},
-    infrastructure::{config::Config, database},
+    application::{auth_service::AuthService, blog_service::BlogService},
+    domain::error::BlogError,
+    infrastructure::{config::Config, database, logging},
 };
 
+mod application;
 mod data;
 mod domain;
 mod infrastructure;
@@ -19,6 +22,10 @@ async fn main() {
 }
 
 async fn run() -> Result<(), BlogError> {
+
+    logging::init();
+    tracing::info!("Satrting server ...");
+
     dotenvy::dotenv().ok();
 
     let config = Config::from_env()?;
@@ -31,15 +38,20 @@ async fn run() -> Result<(), BlogError> {
         .await
         .map_err(|e| BlogError::ErrorNotKnow(e.to_string()))?;
 
-    
+    let blog_service = Arc::new(BlogService {});
+
     _ = HttpServer::new(move || {
+        let auth_service= AuthService::new();
         App::new()
+            .app_data(web::Data::new(pool.clone()))
+            .app_data(web::Data::new(auth_service))
+            .app_data(web::Data::new(blog_service.clone()))
             .configure(presentation::http_handlers::configure)
     })
-    .bind(("0.0.0.0", config.port)).map_err(|e| BlogError::ErrorNotKnow(e.to_string()))?
+    .bind(("0.0.0.0", config.port))
+    .map_err(|e| BlogError::ErrorNotKnow(e.to_string()))?
     .run()
     .await;
-    
+
     Ok(())
-    
 }

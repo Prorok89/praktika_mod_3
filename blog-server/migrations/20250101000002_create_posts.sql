@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS posts (
-    id BIGINT PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     title VARCHAR NOT NULL,
     content TEXT NOT NULL,
     author_id BIGINT REFERENCES users(id) NOT NULL,

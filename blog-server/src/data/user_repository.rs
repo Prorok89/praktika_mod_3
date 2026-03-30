@@ -1,8 +1,8 @@
 use sqlx::PgPool;
 
-use crate::domain::user::User;
+use crate::domain::{error::BlogError, user::User};
 
-pub async fn create_user(pool: &PgPool, user: &User) -> Result<(), sqlx::Error> {
+pub async fn create_user(pool: &PgPool, user: &User) -> Result<(), BlogError> {
     _ = sqlx::query(
         r#"insert into users 
             (username, email, password_hash, created_at)
@@ -16,12 +16,14 @@ pub async fn create_user(pool: &PgPool, user: &User) -> Result<(), sqlx::Error> 
     .bind(&user.password_hash)
     .bind(user.created_at)
     .execute(pool)
-    .await?;
+    .await
+    .map_err(|e|BlogError::SqlError(e.to_string()))?
+    ;
 
     Ok(())
 }
 
-pub async fn update_user(pool: &PgPool, user: &User) -> Result<(), sqlx::Error> {
+pub async fn update_user(pool: &PgPool, user: &User) -> Result<(), BlogError> {
 
     _ = sqlx::query(r#"
         update users
@@ -35,13 +37,14 @@ pub async fn update_user(pool: &PgPool, user: &User) -> Result<(), sqlx::Error> 
     .bind(&user.password_hash)
     .bind(&user.created_at)
     .execute(pool)
-    .await?
+    .await
+    .map_err(|e|BlogError::SqlError(e.to_string()))?
     ;
     
     Ok(())
 }
 
-pub async fn delete_user(pool: &PgPool, id : i64) -> Result<(), sqlx::Error> {
+pub async fn delete_user(pool: &PgPool, id : i64) -> Result<(), BlogError> {
     _ = sqlx::query(
         r#"
             delete form users
@@ -51,32 +54,35 @@ pub async fn delete_user(pool: &PgPool, id : i64) -> Result<(), sqlx::Error> {
     )
     .bind(id)
     .execute(pool)
-    .await?
+    .await
+     .map_err(|e|BlogError::SqlError(e.to_string()))?
     ;
     Ok(())
 }
 
-pub async fn find_user_by_id(pool: &PgPool, id : i64) -> Result<User, sqlx::Error> {
+pub async fn find_user_by_id(pool: &PgPool, id : i64) -> Result<User, BlogError> {
     let user = sqlx::query_as!(
         User,
         "select id, username, email, password_hash, created_at from users where id = $1",
         id
     )
     .fetch_one(pool)
-    .await?
+    .await
+    .map_err(|e|BlogError::SqlError(e.to_string()))?
     ;
 
     Ok(user)
 }
 
-pub async fn find_user_by_email(pool: &PgPool, email : String) -> Result<User, sqlx::Error> {
+pub async fn find_user_by_email(pool: &PgPool, email : String) -> Result<User, BlogError> {
    let user = sqlx::query_as!(
         User,
         "select id, username, email, password_hash, created_at from users where email = $1",
         email
     )
     .fetch_one(pool)
-    .await?
+    .await
+    .map_err(|e|BlogError::SqlError(e.to_string()))?
     ;
     Ok(user)
 }

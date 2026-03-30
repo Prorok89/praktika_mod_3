@@ -31,10 +31,11 @@ impl User {
     }
 }
 
+#[derive(Deserialize, Debug)]
 pub struct FormReg {
-    username: String,
-    email: String,
-    password: String,
+    pub username: String,
+    pub email: String,
+    pub password: String,
 }
 
 pub struct FormAuth {
