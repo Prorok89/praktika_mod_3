@@ -3,7 +3,7 @@ use sqlx::{PgPool, postgres::PgPoolOptions};
 pub async fn create_pool(url : &String) -> Result<PgPool, sqlx::Error>
 {
     let pool = PgPoolOptions::new()
-        .max_connections(20)
+        .max_connections(5)
         .connect(url)
         .await?
     ;
@@ -12,7 +12,7 @@ pub async fn create_pool(url : &String) -> Result<PgPool, sqlx::Error>
 }
 
 
-pub async fn migration(poll : &PgPool) ->Result<(), sqlx::Error>{
+pub async fn run_migrations(poll : &PgPool) ->Result<(), sqlx::Error>{
     sqlx::migrate!("./migrations").run(poll).await?;
 
     Ok(())

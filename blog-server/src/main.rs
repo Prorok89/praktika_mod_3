@@ -1,3 +1,5 @@
+use actix_web::{App, HttpServer};
+
 use crate::{
     data::user_repository,
     domain::{error::BlogError},
@@ -7,8 +9,9 @@ use crate::{
 mod data;
 mod domain;
 mod infrastructure;
+mod presentation;
 
-#[tokio::main]
+#[actix_web::main]
 async fn main() {
     if let Err(e) = run().await {
         println!("{}", e);
@@ -24,23 +27,19 @@ async fn run() -> Result<(), BlogError> {
         .await
         .map_err(|e| BlogError::ErrorNotKnow(e.to_string()))?;
 
-    database::migration(&pool)
+    database::run_migrations(&pool)
         .await
         .map_err(|e| BlogError::ErrorNotKnow(e.to_string()))?;
 
     
-
-    // let user = User::new("test@test1", "test11", "loginlogin1");
-
-    // _ = user_repository::create_user(&pool, &user)
-    //     .await
-    //     .map_err(|e| BlogError::ErrorNotKnow(e.to_string()))?;
-
-    let u = user_repository::find_user_by_email(&pool, "test@test1".to_string())
-        .await
-        .map_err(|e| BlogError::ErrorNotKnow(e.to_string()))?;
-    
-    println!("{:?}", u);
+    _ = HttpServer::new(move || {
+        App::new()
+            .configure(presentation::http_handlers::configure)
+    })
+    .bind(("0.0.0.0", config.port)).map_err(|e| BlogError::ErrorNotKnow(e.to_string()))?
+    .run()
+    .await;
     
     Ok(())
+    
 }
