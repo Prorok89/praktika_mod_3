@@ -1,15 +1,15 @@
 use argon2::{
-    Algorithm, Argon2, Params, PasswordHash, PasswordHasher, PasswordVerifier, password_hash::{self, Salt, SaltString, rand_core::OsRng}
+    Argon2, Params, PasswordHash, PasswordHasher, PasswordVerifier, password_hash::{SaltString, rand_core::OsRng}
 };
 use chrono::{self, DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
 use crate::domain::error::BlogError;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct User {
-    pub id: Uuid,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<i64>,
     pub username: String,
     pub email: String,
     pub password_hash: String,
@@ -22,7 +22,7 @@ impl User {
             hash_password(&password).map_err(|e| BlogError::ErrorNotKnow(e.to_string()))?;
 
         Ok(Self {
-            id: Uuid::new_v4(),
+            id: None,
             email: email.to_string(),
             password_hash,
             username: username.to_string(),
@@ -97,6 +97,7 @@ mod tests {
         let user = User::new(email, password, username).unwrap();
 
         assert_eq!(email, user.email);
+        assert_eq!(user.id, None);
         assert_eq!(verify_password(password, &hash_password(password).unwrap()), Ok(true));
     }
 }

@@ -1,9 +1,6 @@
-use chrono::{DateTime, Utc};
-use uuid::Uuid;
-
 use crate::{
     data::user_repository,
-    domain::{error::BlogError, user::User},
+    domain::{error::BlogError},
     infrastructure::{config::Config, database},
 };
 
