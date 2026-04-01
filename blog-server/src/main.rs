@@ -1,11 +1,13 @@
 use std::sync::Arc;
 
+use actix_cors::Cors;
 use actix_web::{App, HttpServer, web};
 
 use crate::{
     application::{auth_service::AuthService, blog_service::BlogService},
     domain::error::BlogError,
     infrastructure::{config::Config, database, logging},
+    presentation::middleware::configure_cors,
 };
 
 mod application;
@@ -22,7 +24,6 @@ async fn main() {
 }
 
 async fn run() -> Result<(), BlogError> {
-
     logging::init();
     tracing::info!("Satrting server ...");
 
@@ -39,10 +40,12 @@ async fn run() -> Result<(), BlogError> {
         .map_err(|e| BlogError::ErrorNotKnow(e.to_string()))?;
 
     let blog_service = Arc::new(BlogService {});
-
+    let config_clone = config.clone();
     _ = HttpServer::new(move || {
-        let auth_service= AuthService::new();
+        let auth_service = AuthService::new();
+        let cors = configure_cors(&config_clone);
         App::new()
+            .wrap(cors)
             .app_data(web::Data::new(pool.clone()))
             .app_data(web::Data::new(auth_service))
             .app_data(web::Data::new(blog_service.clone()))
