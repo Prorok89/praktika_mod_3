@@ -1,13 +1,12 @@
 use std::sync::Arc;
 
-use actix_cors::Cors;
 use actix_web::{App, HttpServer, web};
 
 use crate::{
     application::{auth_service::AuthService, blog_service::BlogService},
     domain::error::BlogError,
-    infrastructure::{config::Config, database, logging},
-    presentation::middleware::configure_cors,
+    infrastructure::{config::Config, database, jwt::JwtMiddleware, logging},
+    presentation::{http_handlers, middleware::configure_cors},
 };
 
 mod application;
@@ -49,7 +48,16 @@ async fn run() -> Result<(), BlogError> {
             .app_data(web::Data::new(pool.clone()))
             .app_data(web::Data::new(auth_service))
             .app_data(web::Data::new(blog_service.clone()))
-            .configure(presentation::http_handlers::configure)
+            .app_data(web::Data::new(config_clone.clone()))
+            .service(
+				web::scope("")
+				.service(http_handlers::scope_public())
+				.service(
+					web::scope("")
+					.wrap(JwtMiddleware::new(config_clone.jwt_secret.clone()))
+					.service(http_handlers::scope_private())
+				)
+			)
     })
     .bind(("0.0.0.0", config.port))
     .map_err(|e| BlogError::ErrorNotKnow(e.to_string()))?
