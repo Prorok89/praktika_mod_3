@@ -22,7 +22,6 @@ impl AuthService {
 		user_new.id = Some(user_id);
 
         Ok(user_new)
-
     }
 
 	pub async fn login_user(&self, user: &FormAuth, pool: &PgPool) -> Result<User, BlogError> {
@@ -30,7 +29,5 @@ impl AuthService {
             Err(e) => Err(e),
 			Ok(l_user) => Ok(l_user)
         }
-
-
 	}
 }

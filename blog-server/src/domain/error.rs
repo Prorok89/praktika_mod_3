@@ -11,8 +11,8 @@ pub enum BlogError {
     UserAlreadyExists,
     #[error("invalid credentials")]
     InvalidCredentials,
-    #[error("post not found")]
-    PostNotFound,
+    #[error("post not found: {0}")]
+    PostNotFound(String),
     #[error("forbidden")]
     Forbidden,
     #[error("var on .env not found : {0}")]
@@ -29,7 +29,7 @@ impl ResponseError for BlogError {
             BlogError::UserNotFound => actix_web::http::StatusCode::NOT_FOUND,
             BlogError::UserAlreadyExists => actix_web::http::StatusCode::CONFLICT,
             BlogError::InvalidCredentials => actix_web::http::StatusCode::UNAUTHORIZED,
-            BlogError::PostNotFound => actix_web::http::StatusCode::NOT_FOUND,
+            BlogError::PostNotFound(_) => actix_web::http::StatusCode::NOT_FOUND,
             BlogError::Forbidden => actix_web::http::StatusCode::FORBIDDEN,
             BlogError::VarEnvNotFound(_) => actix_web::http::StatusCode::INTERNAL_SERVER_ERROR,
             BlogError::ErrorNotKnow(_) => actix_web::http::StatusCode::INTERNAL_SERVER_ERROR,

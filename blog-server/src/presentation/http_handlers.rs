@@ -14,9 +14,10 @@ use actix_web::{HttpMessage, HttpRequest, HttpResponse, web};
 use sqlx::PgPool;
 
 use crate::{
-    application::auth_service::AuthService,
+    application::{auth_service::AuthService, blog_service::BlogService},
     domain::{
         error::BlogError,
+        post::PostCreateOrUpdate,
         user::{FormAuth, FormReg, verify_password},
     },
     infrastructure::{config::Config, jwt::JwtService},
@@ -80,19 +81,31 @@ pub async fn auth_login(
     }
 }
 
-pub async fn create_posts(req: HttpRequest) -> Result<HttpResponse, BlogError> {
+pub async fn create_posts(
+    req: HttpRequest,
+    post: web::Json<PostCreateOrUpdate>,
+    blog_service: web::Data<BlogService>,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, BlogError> {
     match req.extensions().get::<AuthenticatedUser>() {
-        Some(user) => Ok(HttpResponse::Ok().json(serde_json::json!({
-            "test" : &user.user_id
-        }))),
+        Some(user) => {
+            let post_new = blog_service.create_post(&post, &user, &pool).await?;
+            Ok(HttpResponse::Created().json(serde_json::json!(post_new)))
+        }
         None => Err(BlogError::ErrorNotKnow("E".to_string())),
     }
 }
 
-pub async fn get_post() -> HttpResponse {
-    HttpResponse::Ok().json(serde_json::json!({
-        "test" : "1"
-    }))
+pub async fn get_post(
+    path: web::Path<i64>,
+    blog_service: web::Data<BlogService>,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, BlogError> {
+    let user_id = path.into_inner();
+    match blog_service.get_post(user_id, &pool).await {
+        Ok(post) => Ok(HttpResponse::Created().json(serde_json::json!(post))),
+        Err(e) => Err(BlogError::PostNotFound(e.to_string())),
+    }
 }
 
 pub async fn get_posts() -> HttpResponse {
@@ -101,14 +114,40 @@ pub async fn get_posts() -> HttpResponse {
     }))
 }
 
-pub async fn put_post() -> HttpResponse {
-    HttpResponse::Ok().json(serde_json::json!({
-        "test" : "put_post"
-    }))
+pub async fn put_post(
+    path: web::Path<i64>,
+    req: HttpRequest,
+    post: web::Json<PostCreateOrUpdate>,
+    blog_service: web::Data<BlogService>,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, BlogError> {
+    match req.extensions().get::<AuthenticatedUser>() {
+        Some(user) => {
+            let post_id = path.into_inner();
+            let updated_post = blog_service
+                .update_post(post_id, &post, &user, &pool)
+                .await?;
+            Ok(HttpResponse::Ok().json(serde_json::json!(updated_post)))
+        }
+        None => Err(BlogError::ErrorNotKnow("E".to_string())),
+    }
 }
 
-pub async fn delete_post() -> HttpResponse {
-    HttpResponse::Ok().json(serde_json::json!({
-        "test" : "delete_post"
-    }))
+pub async fn delete_post(
+    path: web::Path<i64>,
+    req: HttpRequest,
+    blog_service: web::Data<BlogService>,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, BlogError> {
+    match req.extensions().get::<AuthenticatedUser>() {
+        Some(user) => {
+            let post_id = path.into_inner();
+            blog_service
+                .delete_post(post_id, &user, &pool)
+                .await?;
+
+            Ok(HttpResponse::NoContent().into())
+        }
+        None => Err(BlogError::ErrorNotKnow("E".to_string())),
+    }
 }

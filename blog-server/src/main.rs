@@ -42,11 +42,11 @@ async fn run() -> Result<(), BlogError> {
         .await
         .map_err(|e| BlogError::ErrorNotKnow(e.to_string()))?;
 
-    let blog_service = Arc::new(BlogService {});
     let config_clone = config.clone();
 
     _ = HttpServer::new(move || {
         let auth_service = AuthService::new();
+        let blog_service = BlogService::new();
         let cors = configure_cors(&config_clone);
 
         let auth = HttpAuthentication::bearer(jwt_validator);
@@ -55,7 +55,7 @@ async fn run() -> Result<(), BlogError> {
             .wrap(cors)
             .app_data(web::Data::new(pool.clone()))
             .app_data(web::Data::new(auth_service))
-            .app_data(web::Data::new(blog_service.clone()))
+            .app_data(web::Data::new(blog_service))
             .app_data(web::Data::new(config_clone.clone()))
             .route(
                 "/api/auth/register",
