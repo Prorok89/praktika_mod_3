@@ -1,12 +1,16 @@
 use std::sync::Arc;
 
 use actix_web::{App, HttpServer, web};
+use actix_web_httpauth::middleware::HttpAuthentication;
 
 use crate::{
     application::{auth_service::AuthService, blog_service::BlogService},
     domain::error::BlogError,
-    infrastructure::{config::Config, database, jwt::JwtMiddleware, logging},
-    presentation::{http_handlers, middleware::configure_cors},
+    infrastructure::{config::Config, database, logging},
+    presentation::{
+        http_handlers,
+        middleware::{configure_cors, jwt_validator},
+    },
 };
 
 mod application;
@@ -40,24 +44,34 @@ async fn run() -> Result<(), BlogError> {
 
     let blog_service = Arc::new(BlogService {});
     let config_clone = config.clone();
+
     _ = HttpServer::new(move || {
         let auth_service = AuthService::new();
         let cors = configure_cors(&config_clone);
+
+        let auth = HttpAuthentication::bearer(jwt_validator);
+
         App::new()
             .wrap(cors)
             .app_data(web::Data::new(pool.clone()))
             .app_data(web::Data::new(auth_service))
             .app_data(web::Data::new(blog_service.clone()))
             .app_data(web::Data::new(config_clone.clone()))
+            .route(
+                "/api/auth/register",
+                web::post().to(http_handlers::auth_register),
+            )
+            .route("/api/auth/login", web::post().to(http_handlers::auth_login))
+            .route("/api/post/{id}", web::get().to(http_handlers::get_post))
+            .route("/api/posts", web::get().to(http_handlers::get_posts))
+            // Protected routes with JWT
             .service(
-				web::scope("")
-				.service(http_handlers::scope_public())
-				.service(
-					web::scope("")
-					.wrap(JwtMiddleware::new(config_clone.jwt_secret.clone()))
-					.service(http_handlers::scope_private())
-				)
-			)
+                web::scope("/api")
+                    .wrap(auth)
+                    .route("/posts", web::post().to(http_handlers::create_posts))
+                    .route("/posts/{id}", web::put().to(http_handlers::put_post))
+                    .route("/posts/{id}", web::delete().to(http_handlers::delete_post)),
+            )
     })
     .bind(("0.0.0.0", config.port))
     .map_err(|e| BlogError::ErrorNotKnow(e.to_string()))?

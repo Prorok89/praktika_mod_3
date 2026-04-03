@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Post {
+	#[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<i64>,
     pub title: String,
     pub content: String,
@@ -11,9 +12,10 @@ pub struct Post {
     pub updated_at: DateTime<Utc>,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PostCreateOrUpdate {
-    title: String,
-    content: String,
+    pub title: String,
+    pub content: String,
 }
 
 impl Post {

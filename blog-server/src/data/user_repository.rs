@@ -82,3 +82,15 @@ pub async fn find_user_by_email(pool: &PgPool, email: String) -> Result<User, Bl
     .map_err(|e| BlogError::SqlError(e.to_string()))?;
     Ok(user)
 }
+
+pub async fn find_user_by_username(pool: &PgPool, username: String) -> Result<User, BlogError> {
+    let user = sqlx::query_as!(
+        User,
+        "select id, username, email, password_hash, created_at from users where username = $1",
+        username
+    )
+    .fetch_one(pool)
+    .await
+    .map_err(|e| BlogError::SqlError(e.to_string()))?;
+    Ok(user)
+}

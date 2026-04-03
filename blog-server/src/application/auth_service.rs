@@ -1,6 +1,6 @@
 use sqlx::PgPool;
 
-use crate::{data::user_repository, domain::{error::BlogError, user::{FormReg, User}}};
+use crate::{data::user_repository, domain::{error::BlogError, user::{FormAuth, FormReg, User, hash_password, verify_password}}};
 
 pub struct AuthService;
 
@@ -24,4 +24,13 @@ impl AuthService {
         Ok(user_new)
 
     }
+
+	pub async fn login_user(&self, user: &FormAuth, pool: &PgPool) -> Result<User, BlogError> {
+        match user_repository::find_user_by_username(pool, user.username.clone()).await{
+            Err(e) => Err(e),
+			Ok(l_user) => Ok(l_user)
+        }
+
+
+	}
 }

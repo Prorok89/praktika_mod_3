@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 actix-cors = "0.7.1"
 actix-web = "4.13.0"
+actix-web-httpauth = "0.8.2"
 argon2 = "0.5.3"
 chrono = { workspace = true }
 dotenvy = "0.15.7"

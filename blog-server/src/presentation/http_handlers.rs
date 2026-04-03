@@ -4,46 +4,26 @@ POST /api/auth/login - public
 
 GET /api/posts/{id} - public
 GET /api/posts - public
+
 POST /api/posts - private
 PUT /api/posts/{id} - private
 DELETE /api/posts/{id} - private
 */
 
-use actix_web::{
-    HttpResponse, Scope, delete, get, post, put,
-    web::{self},
-};
+use actix_web::{HttpMessage, HttpRequest, HttpResponse, web};
 use sqlx::PgPool;
 
 use crate::{
     application::auth_service::AuthService,
-    domain::{error::BlogError, user::FormReg}, infrastructure::{config::Config, jwt::JwtService},
+    domain::{
+        error::BlogError,
+        user::{FormAuth, FormReg, verify_password},
+    },
+    infrastructure::{config::Config, jwt::JwtService},
+    presentation::middleware::AuthenticatedUser,
 };
 
-pub fn scope_private() -> Scope {
-    let scope_api = web::scope("/api")
-        .service(create_posts)
-        .service(put_post)
-        .service(delete_post);
-
-    scope_api
-}
-
-pub fn scope_public() -> Scope {
-    let scope_auth = web::scope("/auth")
-        .service(auth_register)
-        .service(auth_login);
-
-    let scope_api = web::scope("/api")
-        .service(scope_auth)
-        .service(get_post)
-        .service(get_posts);
-
-    scope_api
-}
-
-#[post("/register")]
-async fn auth_register(
+pub async fn auth_register(
     user: web::Json<FormReg>,
     auth_service: web::Data<AuthService>,
     pool: web::Data<PgPool>,
@@ -53,10 +33,8 @@ async fn auth_register(
 
     match auth_service.create_user(&user, &pool).await {
         Ok(new_user) => {
-            let token = JwtService::new(&config.jwt_secret).generate_token(
-                new_user.id.unwrap(),
-                new_user.username.clone(),
-            )?;
+            let token = JwtService::new(&config.jwt_secret)
+                .generate_token(new_user.id.unwrap(), new_user.username.clone())?;
 
             Ok(HttpResponse::Created().json(serde_json::json!({
                 "token": token,
@@ -72,45 +50,65 @@ async fn auth_register(
         Err(e) => Err(e),
     }
 }
-#[post("/login")]
-async fn auth_login() -> HttpResponse {
-    // username, password
+
+pub async fn auth_login(
+    user: web::Json<FormAuth>,
+    auth_service: web::Data<AuthService>,
+    pool: web::Data<PgPool>,
+    config: web::Data<Config>,
+) -> Result<HttpResponse, BlogError> {
+    match auth_service.login_user(&user, &pool).await {
+        Ok(l_user) => {
+            if !verify_password(&user.password, &l_user.password_hash)
+                .map_err(|e| BlogError::ErrorNotKnow(e.to_string()))?
+            {
+                return Err(BlogError::InvalidCredentials);
+            }
+
+            let token = JwtService::new(&config.jwt_secret)
+                .generate_token(l_user.id.unwrap(), l_user.username.clone())?;
+
+            Ok(HttpResponse::Created().json(serde_json::json!({
+                "token": token,
+                "user": {
+                    "username": l_user.username,
+                    "email": l_user.email
+                }
+            })))
+        }
+        Err(e) => Err(e),
+    }
+}
+
+pub async fn create_posts(req: HttpRequest) -> Result<HttpResponse, BlogError> {
+    match req.extensions().get::<AuthenticatedUser>() {
+        Some(user) => Ok(HttpResponse::Ok().json(serde_json::json!({
+            "test" : &user.user_id
+        }))),
+        None => Err(BlogError::ErrorNotKnow("E".to_string())),
+    }
+}
+
+pub async fn get_post() -> HttpResponse {
     HttpResponse::Ok().json(serde_json::json!({
         "test" : "1"
     }))
 }
 
-#[post("/posts")]
-async fn create_posts() -> HttpResponse {
+pub async fn get_posts() -> HttpResponse {
     HttpResponse::Ok().json(serde_json::json!({
-        "test" : "1"
+        "test" : "get_posts"
     }))
 }
 
-#[get("/posts/{id}")]
-async fn get_post() -> HttpResponse {
+pub async fn put_post() -> HttpResponse {
     HttpResponse::Ok().json(serde_json::json!({
-        "test" : "1"
+        "test" : "put_post"
     }))
 }
 
-#[get("/posts")]
-async fn get_posts() -> HttpResponse {
+pub async fn delete_post() -> HttpResponse {
     HttpResponse::Ok().json(serde_json::json!({
-        "test" : "1"
-    }))
-}
-
-#[put("/posts/{id}")]
-async fn put_post() -> HttpResponse {
-    HttpResponse::Ok().json(serde_json::json!({
-        "test" : "1"
-    }))
-}
-
-#[delete("/posts/{id}")]
-async fn delete_post() -> HttpResponse {
-    HttpResponse::Ok().json(serde_json::json!({
-        "test" : "1"
+        "test" : "delete_post"
     }))
 }
