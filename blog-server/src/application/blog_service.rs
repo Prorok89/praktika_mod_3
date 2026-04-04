@@ -82,4 +82,12 @@ impl BlogService {
 
         Ok(post)
     }
+
+	pub async fn  get_posts(&self, limit: i64, offset : i64, pool: &PgPool) -> Result<(Vec<Post>, i64), BlogError> {
+
+		let posts = post_repository::select_list(&pool, limit, offset).await?;
+		let count = post_repository::count_posts(&pool).await?;
+
+		Ok((posts, count))
+	}
 }

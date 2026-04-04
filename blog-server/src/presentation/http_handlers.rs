@@ -17,7 +17,7 @@ use crate::{
     application::{auth_service::AuthService, blog_service::BlogService},
     domain::{
         error::BlogError,
-        post::PostCreateOrUpdate,
+        post::{PostCreateOrUpdate, QueryParams},
         user::{FormAuth, FormReg, verify_password},
     },
     infrastructure::{config::Config, jwt::JwtService},
@@ -92,7 +92,7 @@ pub async fn create_posts(
             let post_new = blog_service.create_post(&post, &user, &pool).await?;
             Ok(HttpResponse::Created().json(serde_json::json!(post_new)))
         }
-        None => Err(BlogError::ErrorNotKnow("E".to_string())),
+        None => Err(BlogError::ErrorNotKnow("E1".to_string())),
     }
 }
 
@@ -108,10 +108,22 @@ pub async fn get_post(
     }
 }
 
-pub async fn get_posts() -> HttpResponse {
-    HttpResponse::Ok().json(serde_json::json!({
-        "test" : "get_posts"
-    }))
+pub async fn get_posts(
+    query: web::Query<QueryParams>,
+    blog_service: web::Data<BlogService>,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, BlogError> {
+    let limit = query.limit;
+    let offset = query.offset;
+
+    let (posts, count) = blog_service.get_posts(limit, offset, &pool).await?;
+
+    Ok(HttpResponse::Ok().json(serde_json::json!({
+        "posts": posts,
+        "total": count,
+        "limit": limit,
+        "offset": offset
+    })))
 }
 
 pub async fn put_post(
@@ -129,7 +141,7 @@ pub async fn put_post(
                 .await?;
             Ok(HttpResponse::Ok().json(serde_json::json!(updated_post)))
         }
-        None => Err(BlogError::ErrorNotKnow("E".to_string())),
+        None => Err(BlogError::ErrorNotKnow("E2".to_string())),
     }
 }
 
@@ -142,12 +154,10 @@ pub async fn delete_post(
     match req.extensions().get::<AuthenticatedUser>() {
         Some(user) => {
             let post_id = path.into_inner();
-            blog_service
-                .delete_post(post_id, &user, &pool)
-                .await?;
+            blog_service.delete_post(post_id, &user, &pool).await?;
 
             Ok(HttpResponse::NoContent().into())
         }
-        None => Err(BlogError::ErrorNotKnow("E".to_string())),
+        None => Err(BlogError::ErrorNotKnow("E3".to_string())),
     }
 }

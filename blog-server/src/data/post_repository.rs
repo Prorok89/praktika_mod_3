@@ -76,3 +76,33 @@ pub async fn find_post_by_id(pool: &PgPool, id: i64) -> Result<Post, BlogError> 
 
     Ok(post)
 }
+
+pub async  fn select_list(pool: &PgPool, limit : i64, offset : i64) -> Result<Vec<Post>, BlogError> {
+   let posts = sqlx::query_as!(
+        Post,
+        "select id, title, content, author_id, created_at, updated_at from posts order by created_at asc limit $1 offset $2",
+		limit,
+		offset
+    )
+    .fetch_all(pool)
+    .await
+    .map_err(|e| BlogError::SqlError(e.to_string()))?;
+
+    Ok(posts)
+}
+
+pub async  fn count_posts(pool: &PgPool) -> Result<i64, BlogError> {
+
+   let count = sqlx::query_scalar!(
+        "select count(1) from posts",
+    )
+    .fetch_one(pool)
+    .await
+    .map_err(|e| BlogError::SqlError(e.to_string()))?
+	;
+
+	match count {
+		Some(c) => Ok(c),
+		None => Err(BlogError::PostNotFound("".to_string()))
+	}
+}
