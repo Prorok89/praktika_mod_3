@@ -21,5 +21,6 @@ target
 #.idea/
 
 .env
+.temp
 .blog_token
 Cargo.lock

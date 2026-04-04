@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use tonic::transport::Server;
 
 use actix_web::{App, HttpServer, web};
 use actix_web_httpauth::middleware::HttpAuthentication;
@@ -8,6 +8,7 @@ use crate::{
     domain::error::BlogError,
     infrastructure::{config::Config, database, logging},
     presentation::{
+        grpc_service::{BlogGrpcService, blog_service_server::BlogServiceServer},
         http_handlers,
         middleware::{configure_cors, jwt_validator},
     },
@@ -43,6 +44,17 @@ async fn run() -> Result<(), BlogError> {
         .map_err(|e| BlogError::ErrorNotKnow(e.to_string()))?;
 
     let config_clone = config.clone();
+
+    let grpc_addr = "0.0.0.0:50051".parse().unwrap();
+    let grpc_service = BlogGrpcService::new(pool.clone(), &config.jwt_secret);
+
+    tokio::spawn(async move {
+        _ = Server::builder()
+            .add_service(BlogServiceServer::new(grpc_service))
+            .serve(grpc_addr)
+            .await
+            .map_err(|e| BlogError::ErrorNotKnow(format!("gRPC server error: {}", e)));
+    });
 
     _ = HttpServer::new(move || {
         let auth_service = AuthService::new();

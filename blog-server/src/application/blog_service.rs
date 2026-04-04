@@ -9,6 +9,7 @@ use crate::{
     presentation::middleware::AuthenticatedUser,
 };
 
+#[derive(Clone)]
 pub struct BlogService;
 
 impl BlogService {

@@ -2,6 +2,7 @@ use sqlx::PgPool;
 
 use crate::{data::user_repository, domain::{error::BlogError, user::{FormAuth, FormReg, User, hash_password, verify_password}}};
 
+#[derive(Clone)]
 pub struct AuthService;
 
 impl AuthService {
