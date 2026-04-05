@@ -4,7 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+blog-client = { path = "../blog-client" }
 chrono = { workspace = true }
-clap = "4.6.0"
+clap = { version = "4.6.0", features = ["derive"] }
 dotenvy = "0.15.7"
+reqwest = { version = "0.12", features = ["json"] }
 tokio = { workspace = true }

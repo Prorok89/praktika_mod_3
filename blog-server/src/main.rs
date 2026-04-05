@@ -73,7 +73,7 @@ async fn run() -> Result<(), BlogError> {
             .app_data(web::Data::new(config_clone.clone()))
             .route("/api/auth/register", web::post().to(http_handlers::auth_register))
             .route("/api/auth/login", web::post().to(http_handlers::auth_login))
-            .route("/api/post/{id}", web::get().to(http_handlers::get_post))
+            .route("/api/posts/{id}", web::get().to(http_handlers::get_post))
             .route("/api/posts", web::get().to(http_handlers::get_posts))
             .service(
                 web::scope("/api")
