@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<link data-trunk rel="css" href="style.css" />
+	<link data-trunk rel="rust" data-target-name="blog-wasm" />
+	<meta charset="utf-8" />
+</head>
+
+<body>
+	<div id="main">12</div>
+</body>
+<style>
+	/* Контейнер, который "висит" поверх всего приложения */
+.notification-overlay {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999; /* Поверх всех элементов */
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none; /* Чтобы контейнер не мешал кликать на кнопки под ним */
+}
+
+/* Само всплывающее окно */
+.notification {
+    pointer-events: auto; /* Возвращаем возможность кликать на само уведомление */
+    min-width: 250px;
+    max-width: 350px;
+    padding: 16px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    animation: slideIn 0.3s ease-out; /* Анимация появления */
+    font-family: sans-serif;
+    color: white;
+}
+
+/* Цвета для разных типов */
+.toast-success {
+    background-color: #2e7d32; /* Темно-зеленый */
+    border-left: 5px solid #1b5e20;
+}
+
+.toast-error {
+    background-color: #d32f2f; /* Темно-красный */
+    border-left: 5px solid #b71c1c;
+}
+
+/* Элементы внутри окна */
+.notif-icon {
+    margin-right: 12px;
+    font-size: 1.2em;
+}
+
+.notif-text {
+    flex-grow: 1;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.notif-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    margin-left: 10px;
+    opacity: 0.7;
+}
+
+.notif-close:hover {
+    opacity: 1;
+}
+
+/* Анимация появления сверху-справа */
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+</style>
+</html>

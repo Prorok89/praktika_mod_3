@@ -5,14 +5,18 @@ pub mod grpc_client;
 pub use error::{BlogClientError, Result};
 use serde::{Deserialize, Serialize};
 
+#[cfg(not(target_arch = "wasm32"))]
 pub mod proto {
     tonic::include_proto!("blog");
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Transport {
     Http(String),
+    #[cfg(not(target_arch = "wasm32"))]
     Grpc(String),
+    #[cfg(target_arch = "wasm32")]
+    GrpcWasmPlaceholder(String),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -23,13 +27,13 @@ pub struct AuthResponse {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct User {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+	#[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<i64>,
     pub username: String,
     pub email: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Post {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<i64>,
@@ -48,7 +52,6 @@ where
 {
     use serde::Deserialize;
     let s = String::deserialize(deserializer).map_err(serde::de::Error::custom)?;
-    // Пробуем парсить как ISO 8601 формат
     if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(&s) {
         Ok(dt.timestamp())
     } else if let Ok(ts) = s.parse::<i64>() {
@@ -115,6 +118,7 @@ impl BlogClient {
                 self.token = Some(response.token.clone());
                 Ok(response)
             }
+            #[cfg(not(target_arch = "wasm32"))]
             Transport::Grpc(addr) => {
                 use crate::grpc_client::GrpcClient;
                 let mut client = GrpcClient::new(addr.clone()).await?;
@@ -147,6 +151,7 @@ impl BlogClient {
                 self.token = Some(response.token.clone());
                 Ok(response)
             }
+            #[cfg(not(target_arch = "wasm32"))]
             Transport::Grpc(addr) => {
                 use crate::grpc_client::GrpcClient;
                 let mut client = GrpcClient::new(addr.clone()).await?;
@@ -180,6 +185,7 @@ impl BlogClient {
                     .await?;
                 Ok(response)
             }
+            #[cfg(not(target_arch = "wasm32"))]
             Transport::Grpc(addr) => {
                 use crate::grpc_client::GrpcClient;
                 let mut client = GrpcClient::new(addr.clone()).await?;
@@ -193,6 +199,7 @@ impl BlogClient {
                     updated_at: response.updated_at,
                 })
             }
+			_ => Err(BlogClientError::InvalidRequest("gRPC is not supported in WASM".to_string())),
         }
     }
 
@@ -206,6 +213,7 @@ impl BlogClient {
                     .await?;
                 Ok(response)
             }
+            #[cfg(not(target_arch = "wasm32"))]
             Transport::Grpc(addr) => {
                 use crate::grpc_client::GrpcClient;
                 let mut client = GrpcClient::new(addr.clone()).await?;
@@ -241,6 +249,7 @@ impl BlogClient {
                     .await?;
                 Ok(response)
             }
+            #[cfg(not(target_arch = "wasm32"))]
             Transport::Grpc(addr) => {
                 use crate::grpc_client::GrpcClient;
                 let mut client = GrpcClient::new(addr.clone()).await?;
@@ -269,6 +278,7 @@ impl BlogClient {
                     .await?;
                 Ok(())
             }
+            #[cfg(not(target_arch = "wasm32"))]
             Transport::Grpc(addr) => {
                 use crate::grpc_client::GrpcClient;
                 let mut client = GrpcClient::new(addr.clone()).await?;
@@ -292,6 +302,7 @@ impl BlogClient {
                     .await?;
                 Ok(response.posts)
             }
+            #[cfg(not(target_arch = "wasm32"))]
             Transport::Grpc(addr) => {
                 use crate::grpc_client::GrpcClient;
                 let mut client = GrpcClient::new(addr.clone()).await?;
@@ -320,12 +331,15 @@ mod tests {
     #[test]
     fn test_transport_clone() {
         let http = Transport::Http("http://localhost:8080".to_string());
+        #[cfg(not(target_arch = "wasm32"))]
         let grpc = Transport::Grpc("http://localhost:9090".to_string());
 
         assert!(matches!(http, Transport::Http(_)));
+        #[cfg(not(target_arch = "wasm32"))]
         assert!(matches!(grpc, Transport::Grpc(_)));
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     #[tokio::test]
     async fn test_client_creation() {
         let client = BlogClient::new(Transport::Http("http://localhost:8080".to_string()));

@@ -72,6 +72,7 @@ pub async fn auth_login(
             Ok(HttpResponse::Created().json(serde_json::json!({
                 "token": token,
                 "user": {
+					"id" : l_user.id,
                     "username": l_user.username,
                     "email": l_user.email
                 }

@@ -1,11 +1,16 @@
+#[cfg(not(target_arch = "wasm32"))]
 use crate::error::{BlogClientError, Result};
+#[cfg(not(target_arch = "wasm32"))]
 use tonic::transport::Channel;
+#[cfg(not(target_arch = "wasm32"))]
 use tonic::Request;
 
+#[cfg(not(target_arch = "wasm32"))]
 pub struct GrpcClient {
     inner: crate::proto::blog_service_client::BlogServiceClient<Channel>,
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl GrpcClient {
     pub async fn new(addr: String) -> Result<Self> {
         let channel = Channel::from_shared(addr).map_err(|e| {
@@ -67,9 +72,10 @@ impl GrpcClient {
             content,
         });
 
-        request
-            .metadata_mut()
-            .insert("authorization", format!("Bearer {}", token).parse::<MetadataValue<_>>().unwrap());
+        let auth_header = format!("Bearer {}", token);
+        let val = MetadataValue::try_from(auth_header)
+            .map_err(|e| BlogClientError::InternalError(e.to_string()))?;
+        request.metadata_mut().insert("authorization", val);
 
         let response = self.inner.create_post(request).await?;
         Ok(response.into_inner())
@@ -95,9 +101,10 @@ impl GrpcClient {
             content,
         });
 
-        request
-            .metadata_mut()
-            .insert("authorization", format!("Bearer {}", token).parse::<MetadataValue<_>>().unwrap());
+        let auth_header = format!("Bearer {}", token);
+        let val = MetadataValue::try_from(auth_header)
+            .map_err(|e| BlogClientError::InternalError(e.to_string()))?;
+        request.metadata_mut().insert("authorization", val);
 
         let response = self.inner.update_post(request).await?;
         Ok(response.into_inner())
@@ -107,9 +114,10 @@ impl GrpcClient {
         use tonic::metadata::MetadataValue;
         let mut request = Request::new(crate::proto::PostId { id });
 
-        request
-            .metadata_mut()
-            .insert("authorization", format!("Bearer {}", token).parse::<MetadataValue<_>>().unwrap());
+        let auth_header = format!("Bearer {}", token);
+        let val = MetadataValue::try_from(auth_header)
+            .map_err(|e| BlogClientError::InternalError(e.to_string()))?;
+        request.metadata_mut().insert("authorization", val);
 
         let response = self.inner.delete_post(request).await?;
         Ok(response.into_inner())
