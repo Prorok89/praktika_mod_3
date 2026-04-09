@@ -134,6 +134,8 @@ impl BlogClient {
                 self.token = Some(response.token);
                 Ok(auth_response)
             }
+			#[cfg(target_arch = "wasm32")]
+			_ => Err(BlogClientError::InvalidRequest("gRPC is not supported in WASM".to_string()))
         }
     }
 
@@ -167,6 +169,8 @@ impl BlogClient {
                 self.token = Some(response.token);
                 Ok(auth_response)
             }
+			#[cfg(target_arch = "wasm32")]
+			_ => Err(BlogClientError::InvalidRequest("gRPC is not supported in WASM".to_string()))
         }
     }
 
@@ -199,7 +203,8 @@ impl BlogClient {
                     updated_at: response.updated_at,
                 })
             }
-			_ => Err(BlogClientError::InvalidRequest("gRPC is not supported in WASM".to_string())),
+			#[cfg(target_arch = "wasm32")]
+			_ => Err(BlogClientError::InvalidRequest("gRPC is not supported in WASM".to_string()))
         }
     }
 
@@ -227,6 +232,8 @@ impl BlogClient {
                     updated_at: response.updated_at,
                 })
             }
+			#[cfg(target_arch = "wasm32")]
+			_ => Err(BlogClientError::InvalidRequest("gRPC is not supported in WASM".to_string()))
         }
     }
 
@@ -263,6 +270,8 @@ impl BlogClient {
                     updated_at: response.updated_at,
                 })
             }
+			#[cfg(target_arch = "wasm32")]
+			_ => Err(BlogClientError::InvalidRequest("gRPC is not supported in WASM".to_string()))
         }
     }
 
@@ -285,6 +294,8 @@ impl BlogClient {
                 client.delete_post(token, id).await?;
                 Ok(())
             }
+			#[cfg(target_arch = "wasm32")]
+			_ => Err(BlogClientError::InvalidRequest("gRPC is not supported in WASM".to_string()))
         }
     }
 
@@ -320,6 +331,8 @@ impl BlogClient {
                     })
                     .collect())
             }
+			#[cfg(target_arch = "wasm32")]
+			_ => Err(BlogClientError::InvalidRequest("gRPC is not supported in WASM".to_string()))
         }
     }
 }
